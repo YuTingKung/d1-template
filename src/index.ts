@@ -91,6 +91,24 @@ export default {
         })
       );
     }
+    if (url.pathname === "/api/guest_by_hash") {
+      const hash = url.searchParams.get("hash");
+      if (!hash) {
+        return withCors(new Response(JSON.stringify({ error: "缺少 hash" }), { status: 400 }));
+      }
+      const stmt = env.DB.prepare(
+        `SELECT name, phone, with_guest as number FROM wedding_guests WHERE hash = ? LIMIT 1`
+      ).bind(hash);
+      const { results } = await stmt.all();
+      if (results.length === 0) {
+        return withCors(new Response(JSON.stringify({}), { status: 404 }));
+      }
+      return withCors(
+        new Response(JSON.stringify(results[0]), {
+          headers: { "content-type": "application/json" },
+        })
+      );
+    }
     // API 路徑
     if (url.pathname === "/api/comments") {
       const limit = url.searchParams.get("limit");
