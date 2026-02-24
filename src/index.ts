@@ -121,7 +121,7 @@ export default {
       const number = url.searchParams.get("number");
 
       const { success } = await env.DB.prepare(
-        `INSERT INTO checks (user_id, name, number) VALUES (?, ?, ?)`
+        `INSERT INTO checks (user_id, name, number, update_at) VALUES (?, ?, ?, datetime('now', '+8 hours'))`
       )
         .bind(user_id, name, number)
         .run();
