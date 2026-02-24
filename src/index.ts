@@ -42,37 +42,26 @@ export default {
         const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
         // 欄位對應
-        const mapRow = (row: any) => {
-          // 解析 with_guest 欄位
-          let with_guest = row["是否攜伴出席："] || "";
-          let with_guest_number = 1;
-          if (with_guest.startsWith("是-")) {
-            const n = parseInt(with_guest.replace("是-", ""), 10);
-            with_guest_number = isNaN(n) || n <= 1 ? 1 : n;
-          } else if (with_guest === "否") {
-            with_guest_number = 1;
-          }
-          return {
-            name: row["請問您的大名："] || "",
-            relation: row["與新人的關係："] || "",
-            attend_status: row["是否會出席婚宴：無法出席不用感到壓力，只求哥哥姐姐紅包給力💛"] || "",
-            with_guest: with_guest_number,
-            need_child_seat: row["是否需要兒童座椅："] || "",
-            need_vegetarian: row["是否需要素食：請一併考量同行親友唷！"] || "",
-            need_invitation: row["是否需要寄送喜帖："] || "",
-            email: row["電子喜帖寄送 email："] || "",
-            address: row["紙本喜帖寄送地址：記得填寫郵遞區號唷！"] || "",
-            phone: row["您的聯絡電話："] || "",
-            message: row["有什麼話想和我們說："] || "",
-            answer_time: row["填答時間"] || "",
-            answer_seconds: row["填答秒數"] || 0,
-            ip: row["IP紀錄"] || "",
-            full_flag: row["額滿結束註記"] || "",
-            user_record: row["使用者紀錄"] || "",
-            member_time: row["會員時間"] || "",
-            hash: row["Hash"] || ""
-          };
-        };
+        const mapRow = (row: any) => ({
+          name: row["請問您的大名："] || "",
+          relation: row["與新人的關係："] || "",
+          attend_status: row["是否會出席婚宴：無法出席不用感到壓力，只求哥哥姐姐紅包給力💛"] || "",
+          with_guest: row["是否攜伴出席："] || "",
+          need_child_seat: row["是否需要兒童座椅："] || "",
+          need_vegetarian: row["是否需要素食：請一併考量同行親友唷！"] || "",
+          need_invitation: row["是否需要寄送喜帖："] || "",
+          email: row["電子喜帖寄送 email："] || "",
+          address: row["紙本喜帖寄送地址：記得填寫郵遞區號唷！"] || "",
+          phone: row["您的聯絡電話："] || "",
+          message: row["有什麼話想和我們說："] || "",
+          answer_time: row["填答時間"] || "",
+          answer_seconds: row["填答秒數"] || 0,
+          ip: row["IP紀錄"] || "",
+          full_flag: row["額滿結束註記"] || "",
+          user_record: row["使用者紀錄"] || "",
+          member_time: row["會員時間"] || "",
+          hash: row["Hash"] || ""
+        });
 
         // 批次寫入 DB
         let successCount = 0;
@@ -108,16 +97,34 @@ export default {
         return withCors(new Response(JSON.stringify({ error: "缺少 hash" }), { status: 400 }));
       }
       const stmt = env.DB.prepare(
-        `SELECT name, phone, with_guest as number FROM wedding_guests WHERE hash = ? LIMIT 1`
+        `SELECT name, phone, with_guest FROM wedding_guests WHERE hash = ? LIMIT 1`
       ).bind(hash);
       const { results } = await stmt.all();
       if (results.length === 0) {
         return withCors(new Response(JSON.stringify({}), { status: 404 }));
       }
+      // 處理 with_guest 欄位
+      let number = 1; // 預設 1
+      const with_guest = results[0].with_guest;
+      if (typeof with_guest === "string") {
+        if (with_guest.startsWith("是-")) {
+          const n = parseInt(with_guest.split("-")[1], 10);
+          if (!isNaN(n) && n > 1) number = n;
+        } else if (with_guest === "否") {
+          number = 1;
+        }
+      }
       return withCors(
-        new Response(JSON.stringify(results[0]), {
-          headers: { "content-type": "application/json" },
-        })
+        new Response(
+          JSON.stringify({
+            name: results[0].name,
+            phone: results[0].phone,
+            number,
+          }),
+          {
+            headers: { "content-type": "application/json" },
+          }
+        )
       );
     }
     // API 路徑
