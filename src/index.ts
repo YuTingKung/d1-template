@@ -42,26 +42,37 @@ export default {
         const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
         // 欄位對應
-        const mapRow = (row: any) => ({
-          name: row["請問您的大名："] || "",
-          relation: row["與新人的關係："] || "",
-          attend_status: row["是否會出席婚宴：無法出席不用感到壓力，只求哥哥姐姐紅包給力💛"] || "",
-          with_guest: row["是否攜伴出席："] || "",
-          need_child_seat: row["是否需要兒童座椅："] || "",
-          need_vegetarian: row["是否需要素食：請一併考量同行親友唷！"] || "",
-          need_invitation: row["是否需要寄送喜帖："] || "",
-          email: row["電子喜帖寄送 email："] || "",
-          address: row["紙本喜帖寄送地址：記得填寫郵遞區號唷！"] || "",
-          phone: row["您的聯絡電話："] || "",
-          message: row["有什麼話想和我們說："] || "",
-          answer_time: row["填答時間"] || "",
-          answer_seconds: row["填答秒數"] || 0,
-          ip: row["IP紀錄"] || "",
-          full_flag: row["額滿結束註記"] || "",
-          user_record: row["使用者紀錄"] || "",
-          member_time: row["會員時間"] || "",
-          hash: row["Hash"] || ""
-        });
+        const mapRow = (row: any) => {
+          // 解析 with_guest 欄位
+          let with_guest = row["是否攜伴出席："] || "";
+          let with_guest_number = 1;
+          if (with_guest.startsWith("是-")) {
+            const n = parseInt(with_guest.replace("是-", ""), 10);
+            with_guest_number = isNaN(n) || n <= 1 ? 1 : n;
+          } else if (with_guest === "否") {
+            with_guest_number = 1;
+          }
+          return {
+            name: row["請問您的大名："] || "",
+            relation: row["與新人的關係："] || "",
+            attend_status: row["是否會出席婚宴：無法出席不用感到壓力，只求哥哥姐姐紅包給力💛"] || "",
+            with_guest: with_guest_number,
+            need_child_seat: row["是否需要兒童座椅："] || "",
+            need_vegetarian: row["是否需要素食：請一併考量同行親友唷！"] || "",
+            need_invitation: row["是否需要寄送喜帖："] || "",
+            email: row["電子喜帖寄送 email："] || "",
+            address: row["紙本喜帖寄送地址：記得填寫郵遞區號唷！"] || "",
+            phone: row["您的聯絡電話："] || "",
+            message: row["有什麼話想和我們說："] || "",
+            answer_time: row["填答時間"] || "",
+            answer_seconds: row["填答秒數"] || 0,
+            ip: row["IP紀錄"] || "",
+            full_flag: row["額滿結束註記"] || "",
+            user_record: row["使用者紀錄"] || "",
+            member_time: row["會員時間"] || "",
+            hash: row["Hash"] || ""
+          };
+        };
 
         // 批次寫入 DB
         let successCount = 0;
