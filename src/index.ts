@@ -81,6 +81,16 @@ export default {
         return withCors(new Response("Excel 解析或寫入失敗: " + e, { status: 500 }));
       }
     }
+    if (url.pathname === "/api/wedding_guests") {
+      const stmt = env.DB.prepare(`SELECT * FROM wedding_guests`);
+      const { results } = await stmt.all();
+
+      return withCors(
+        new Response(JSON.stringify(results), {
+          headers: { "content-type": "application/json" },
+        })
+      );
+    }
     // API 路徑
     if (url.pathname === "/api/comments") {
       const limit = url.searchParams.get("limit");
