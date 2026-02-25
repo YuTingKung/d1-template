@@ -67,6 +67,18 @@ export default {
         let successCount = 0;
         for (const r of rows) {
           const data = mapRow(r);
+
+          // 檢查 hash 是否已存在
+          if (data.hash) {
+            const checkStmt = env.DB.prepare(
+              `SELECT 1 FROM wedding_guests WHERE hash = ? LIMIT 1`
+            ).bind(data.hash);
+            const { results: hashResults } = await checkStmt.all();
+            if (hashResults.length > 0) {
+              continue; // hash 已存在，跳過寫入
+            }
+          }
+
           const stmt = env.DB.prepare(
             `INSERT INTO wedding_guests (name, relation, attend_status, with_guest, need_child_seat, need_vegetarian, need_invitation, email, address, phone, message, answer_time, answer_seconds, ip, full_flag, user_record, member_time, hash)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
